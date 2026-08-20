@@ -104,7 +104,7 @@ jobs:
           target: ${{ matrix.target }}
           archive: $bin-$target
           checksum: sha256
-          ref: ${{ inputs.version_tag }}
+          ref: refs/tags/${{ inputs.version_tag }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
   # ============================================================================
