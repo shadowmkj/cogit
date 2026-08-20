@@ -255,44 +255,27 @@ max_diff_chars = 32000
     ) -> Result<(String, ProviderConfig)> {
         let provider_name = provider_override.unwrap_or(&self.default_provider);
 
-        let provider = self.providers.get(provider_name).cloned().or_else(|| {
-            if provider_name == "gemini" {
-                Some(ProviderConfig {
-                    kind: Some(ProviderKind::Gemini),
-                    base_url: None,
-                    model: "gemini-2.5-flash".to_string(),
-                    api_key: std::env::var("GEMINI_API_KEY").ok(),
-                })
-            } else if provider_name == "openai" {
-                Some(ProviderConfig {
-                    kind: Some(ProviderKind::OpenAi),
-                    base_url: Some("https://api.openai.com/v1".to_string()),
-                    model: "gpt-4o-mini".to_string(),
-                    api_key: std::env::var("OPENAI_API_KEY").ok(),
-                })
-            } else if provider_name == "ollama" {
-                Some(ProviderConfig {
-                    kind: Some(ProviderKind::OpenAi),
-                    base_url: Some(
-                        std::env::var("OLLAMA_HOST")
-                            .unwrap_or_else(|_| "http://localhost:11434/v1".to_string()),
-                    ),
-                    model: "qwen2.5-coder:7b".to_string(),
-                    api_key: Some("ollama".to_string()),
-                })
-            } else {
-                None
-            }
-        });
+        let mut provider = self
+            .providers
+            .get(provider_name)
+            .cloned()
+            .or_else(|| default_providers_map().remove(provider_name))
+            .with_context(|| {
+                format!(
+                    "find configuration for provider '{}'. Check your config.toml or specify a valid provider.",
+                    provider_name
+                )
+            })?;
 
-        let conf = provider.with_context(|| {
-            format!(
-                "find configuration for provider '{}'. Check your config.toml or specify a valid provider.",
-                provider_name
-            )
-        })?;
+        if let Some(ref url) = provider.base_url {
+            provider.base_url = Some(expand_string(url));
+        }
+        provider.model = expand_string(&provider.model);
+        if let Some(ref key) = provider.api_key {
+            provider.api_key = Some(expand_string(key));
+        }
 
-        Ok((provider_name.to_string(), conf))
+        Ok((provider_name.to_string(), provider))
     }
 }
 
