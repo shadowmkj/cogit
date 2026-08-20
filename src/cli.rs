@@ -14,7 +14,7 @@ use std::path::PathBuf;
     author,
     version,
     about = "Generate conventional commit messages from staged Git diffs using AI",
-    long_about = "Cogit inspects your staged Git changes, invokes an LLM (Gemini, OpenAI, Ollama), \
+    long_about = "Cogit inspects your staged Git changes, invokes an LLM (Gemini, OpenAI, Grok, Groq, Ollama), \
                   and offers interactive review, editing ($EDITOR), regeneration, and committing."
 )]
 pub struct Args {
@@ -37,11 +37,11 @@ pub struct Args {
     )]
     pub dry_run: bool,
 
-    /// Override the LLM model (e.g., 'gemini-2.5-flash', 'gpt-4o-mini', 'qwen2.5-coder:7b').
+    /// Override the LLM model (e.g., 'gemini-3.5-flash-lite', 'grok-2-latest', 'llama-3.3-70b-versatile').
     #[arg(short = 'm', long = "model", help = "Override LLM model name")]
     pub model: Option<String>,
 
-    /// Override the active provider name ('gemini', 'openai', 'ollama', etc.).
+    /// Override the active provider name ('gemini', 'openai', 'grok', 'groq', 'ollama').
     #[arg(short = 'p', long = "provider", help = "Override active LLM provider")]
     pub provider: Option<String>,
 
