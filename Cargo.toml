@@ -3,6 +3,12 @@ name = "cogit"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
+description = "Fast, AI-powered conventional commit assistant for Git with interactive CLI and TUI modes"
+repository = "https://github.com/shadowmkj/cogit"
+homepage = "https://github.com/shadowmkj/cogit"
+readme = "README.md"
+keywords = ["git", "conventional-commits", "cli", "tui", "ai"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 anyhow = "1.0.104"

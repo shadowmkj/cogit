@@ -27,16 +27,25 @@ Fast, lightweight CLI and TUI tool written in Rust that inspects staged Git diff
 
 ### Installation
 
+**Via Shell Script (macOS / Linux):**
 ```bash
-cargo install cogit
+curl -proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/shadowmkj/cogit/main/scripts/install.sh | sh
 ```
 
-*Or install from source:*
-
+**Via Homebrew (macOS / Linux):**
 ```bash
-git clone https://github.com/shadowmkj/cogit.git
-cd cogit
-cargo install --path .
+brew tap shadowmkj/tap
+brew install cogit
+```
+
+**Via PowerShell (Windows):**
+```powershell
+irm https://raw.githubusercontent.com/shadowmkj/cogit/main/scripts/install.ps1 | iex
+```
+
+**Via Cargo:**
+```bash
+cargo install cogit
 ```
 
 ### Usage
