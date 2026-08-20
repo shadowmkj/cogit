@@ -1,45 +1,82 @@
 # Cogit
 
-Fast, lightweight CLI and TUI tool written in Rust that inspects staged Git diffs and generates **Conventional Commits** using AI (Google Gemini, OpenAI, Grok, Groq, and Ollama).
+<p align="center">
+  <a href="https://crates.io/crates/cogit"><img src="https://img.shields.io/crates/v/cogit.svg?style=flat-square&logo=rust" alt="Crates.io Version"></a>
+  <a href="https://github.com/shadowmkj/cogit/actions"><img src="https://img.shields.io/github/actions/workflow/status/shadowmkj/cogit/ci.yml?branch=main&style=flat-square&logo=github" alt="CI Build Status"></a>
+  <a href="https://codecov.io/gh/shadowmkj/cogit"><img src="https://img.shields.io/codecov/c/github/shadowmkj/cogit?style=flat-square&logo=codecov" alt="Codecov Coverage"></a>
+  <a href="https://docs.rs/cogit"><img src="https://img.shields.io/docsrs/cogit?style=flat-square&logo=docs.rs" alt="Documentation"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
+</p>
 
-## Features
+Fast, lightweight CLI and TUI tool written in Rust that inspects staged Git diffs and generates compliant **Conventional Commits** using AI.
 
-- **Conventional Commits**: Produces compliant messages (`feat:`, `fix:`, `refactor:`, `chore:`, etc.).
-- **Detailed Mode (`-d`)**: Generates a subject line with bulleted rationale.
-- **Multiple Providers**: First-class support for Google Gemini, OpenAI, Grok (xAI), Groq, and Ollama.
-- **Interactive Review & TUI**: Lightweight CLI menu (`inquire`), full visual dual-pane TUI (`ratatui`), and external `$EDITOR` support.
-- **Safe Commits**: Preserves pre-commit hooks and GPG/SSH commit signing.
+---
 
-## Quick Start
+## ✨ Features
 
-### Build & Install
+- **Conventional Commits**: Produces structured commits (`feat:`, `fix:`, `refactor:`, `chore:`, etc.).
+- **Detailed Mode (`-d`)**: Generates a concise subject with a bulleted rationale.
+- **Multiple Providers**: Out-of-the-box support for Google Gemini, OpenAI, Grok (xAI), Groq, and Ollama.
+- **Interactive Review**: Lightweight CLI menu (`inquire`), full-screen dual-pane TUI (`ratatui`), and `$EDITOR` support.
+- **Diff Sanitization**: Strips noisy lockfiles and binary blobs while truncating cleanly at newline boundaries.
+- **Safe Execution**: Preserves Git pre-commit hooks, GPG/SSH commit signatures, and terminal raw mode.
+
+---
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
+cargo install cogit
+```
+
+*Or install from source:*
+
+```bash
+git clone https://github.com/shadowmkj/cogit.git
+cd cogit
 cargo install --path .
 ```
 
 ### Usage
 
-Stage your changes and run `cogit`:
+Stage your changes and invoke `cogit`:
 
 ```bash
 git add .
 cogit
 ```
 
-#### Flags
+#### Common Options
 
-- `cogit -d, --detailed`: Generate structured commit with bulleted details.
-- `cogit --tui`: Open full-screen dual-pane Terminal UI.
-- `cogit --dry-run`: Print commit message to stdout without committing.
-- `cogit -p, --provider <NAME>`: Override active provider (`gemini`, `openai`, `grok`, `groq`, `ollama`).
-- `cogit -m, --model <MODEL>`: Override model name (e.g. `gemini-3.5-flash-lite`, `grok-2-latest`, `llama-3.3-70b-versatile`).
-- `cogit --prompt <HINT>`: Pass extra context or instructions.
-- `cogit --init-config`: Generate default `~/.config/cogit/config.toml`.
+| Option | Description |
+| :--- | :--- |
+| `-d, --detailed` | Generate structured commit with bulleted details |
+| `--tui` | Launch full-screen interactive dual-pane TUI |
+| `--dry-run` | Print generated commit message to stdout without committing |
+| `-p, --provider <NAME>` | Select active provider (`gemini`, `openai`, `grok`, `groq`, `ollama`) |
+| `-m, --model <MODEL>` | Override LLM model name |
+| `--prompt <HINT>` | Supply additional guidance or context for message generation |
+| `--init-config` | Initialize default `~/.config/cogit/config.toml` |
 
-## Configuration
+---
 
-Initialize the default configuration:
+## 🔌 Supported Providers
+
+| Provider | Default Model | Authentication |
+| :--- | :--- | :--- |
+| **Google Gemini** | `gemini-3.5-flash-lite` | `GEMINI_API_KEY` |
+| **OpenAI** | `gpt-4o-mini` | `OPENAI_API_KEY` |
+| **Grok (xAI)** | `grok-2-latest` | `XAI_API_KEY` |
+| **Groq** | `qwen3.6-27b` | `GROQ_API_KEY` |
+| **Ollama** | `qwen2.5-coder:7b` | Local (`http://localhost:11434/v1`) |
+
+---
+
+## ⚙️ Configuration
+
+Initialize the starter configuration file:
 
 ```bash
 cogit --init-config
@@ -48,7 +85,7 @@ cogit --init-config
 Location: `~/.config/cogit/config.toml`
 
 ```toml
-default_provider = "gemini"
+default_provider = "gemini" # or "openai", "grok", "groq", "ollama"
 
 [providers.gemini]
 kind = "gemini"
@@ -82,8 +119,11 @@ api_key = "ollama"
 [preferences]
 detailed = false
 max_diff_chars = 32000
+# editor = "nvim" # uncomment to override system $EDITOR
 ```
 
-## License
+---
 
-MIT OR Apache-2.0
+## 📄 License
+
+Licensed under the [MIT License](LICENSE).
