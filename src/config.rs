@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProviderKind {
-    /// OpenAI-compatible REST API (/v1/chat/completions, e.g. OpenAI, Ollama, Groq, Mistral).
+    /// OpenAI-compatible REST API (/v1/chat/completions, e.g. OpenAI, Ollama, Grok, Groq, Mistral).
     OpenAi,
     /// Google Gemini REST API (v1beta generateContent).
     Gemini,
@@ -25,7 +25,7 @@ pub enum ProviderKind {
 /// Top-level configuration object.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    /// Identifier of the active LLM provider (e.g., "gemini", "openai", "ollama").
+    /// Identifier of the active LLM provider (e.g., "gemini", "openai", "grok", "groq", "ollama").
     #[serde(default = "default_provider_name")]
     pub default_provider: String,
 
@@ -45,14 +45,14 @@ pub struct ProviderConfig {
     #[serde(default)]
     pub kind: Option<ProviderKind>,
 
-    /// Base URL for the endpoint (e.g. "https://api.openai.com/v1" or "http://localhost:11434/v1").
+    /// Base URL for the endpoint (e.g. "https://api.openai.com/v1" or "https://api.x.ai/v1").
     #[serde(default)]
     pub base_url: Option<String>,
 
-    /// Model name to request (e.g. "gemini-2.5-flash", "gpt-4o-mini", "qwen2.5-coder:7b").
+    /// Model name to request (e.g. "gemini-3.5-flash-lite", "gpt-4o-mini", "grok-2-latest", "llama-3.3-70b-versatile").
     pub model: String,
 
-    /// Optional API key or environment variable token (e.g. "${GEMINI_API_KEY}", "${OPENAI_API_KEY}").
+    /// Optional API key or environment variable token (e.g. "${GEMINI_API_KEY}", "${XAI_API_KEY}", "${GROQ_API_KEY}").
     #[serde(default)]
     pub api_key: Option<String>,
 }
@@ -106,12 +106,15 @@ fn default_max_diff_chars() -> usize {
 fn default_providers_map() -> HashMap<String, ProviderConfig> {
     let mut map = HashMap::new();
 
+    let gemini_model =
+        std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-3.5-flash-lite".to_string());
+
     map.insert(
         "gemini".to_string(),
         ProviderConfig {
             kind: Some(ProviderKind::Gemini),
             base_url: None,
-            model: "gemini-2.5-flash".to_string(),
+            model: gemini_model,
             api_key: Some("${GEMINI_API_KEY}".to_string()),
         },
     );
@@ -123,6 +126,26 @@ fn default_providers_map() -> HashMap<String, ProviderConfig> {
             base_url: Some("https://api.openai.com/v1".to_string()),
             model: "gpt-4o-mini".to_string(),
             api_key: Some("${OPENAI_API_KEY}".to_string()),
+        },
+    );
+
+    map.insert(
+        "grok".to_string(),
+        ProviderConfig {
+            kind: Some(ProviderKind::OpenAi),
+            base_url: Some("https://api.x.ai/v1".to_string()),
+            model: "grok-2-latest".to_string(),
+            api_key: Some("${XAI_API_KEY}".to_string()),
+        },
+    );
+
+    map.insert(
+        "groq".to_string(),
+        ProviderConfig {
+            kind: Some(ProviderKind::OpenAi),
+            base_url: Some("https://api.groq.com/openai/v1".to_string()),
+            model: "qwen3.6-27b".to_string(),
+            api_key: Some("${GROQ_API_KEY}".to_string()),
         },
     );
 
@@ -204,11 +227,11 @@ impl Config {
         let default_toml = r#"# Cogit Configuration File
 # Location: ~/.config/cogit/config.toml
 
-default_provider = "gemini" # or "openai", "ollama", "custom"
+default_provider = "gemini" # or "openai", "grok", "groq", "ollama"
 
 [providers.gemini]
 kind = "gemini"
-model = "gemini-2.5-flash"
+model = "gemini-3.5-flash-lite"
 api_key = "${GEMINI_API_KEY}"
 
 [providers.openai]
@@ -216,6 +239,18 @@ kind = "openai"
 base_url = "https://api.openai.com/v1"
 model = "gpt-4o-mini"
 api_key = "${OPENAI_API_KEY}"
+
+[providers.grok]
+kind = "openai"
+base_url = "https://api.x.ai/v1"
+model = "grok-2-latest"
+api_key = "${XAI_API_KEY}"
+
+[providers.groq]
+kind = "openai"
+base_url = "https://api.groq.com/openai/v1"
+model = "qwen3.6-27b"
+api_key = "${GROQ_API_KEY}"
 
 [providers.ollama]
 kind = "openai"
@@ -326,7 +361,7 @@ mod tests {
             default_provider = "gemini"
             [providers.gemini]
             kind = "gemini"
-            model = "gemini-2.5-flash"
+            model = "gemini-3.5-flash-lite"
             api_key = "test-gemini-key"
 
             [providers.openai]
@@ -345,7 +380,7 @@ mod tests {
             .providers
             .get("gemini")
             .expect("gemini provider to exist");
-        assert_eq!(gemini.model, "gemini-2.5-flash");
+        assert_eq!(gemini.model, "gemini-3.5-flash-lite");
         assert_eq!(gemini.resolve_kind("gemini"), ProviderKind::Gemini);
 
         let openai = parsed
@@ -355,5 +390,23 @@ mod tests {
         assert_eq!(openai.model, "gpt-4o");
         assert_eq!(openai.resolve_kind("openai"), ProviderKind::OpenAi);
         assert!(parsed.preferences.detailed);
+    }
+
+    #[test]
+    fn test_grok_and_groq_default_providers() {
+        let providers = default_providers_map();
+        assert!(providers.contains_key("grok"));
+        assert!(providers.contains_key("groq"));
+
+        let grok = providers.get("grok").unwrap();
+        assert_eq!(grok.base_url.as_deref(), Some("https://api.x.ai/v1"));
+        assert_eq!(grok.resolve_kind("grok"), ProviderKind::OpenAi);
+
+        let groq = providers.get("groq").unwrap();
+        assert_eq!(
+            groq.base_url.as_deref(),
+            Some("https://api.groq.com/openai/v1")
+        );
+        assert_eq!(groq.resolve_kind("groq"), ProviderKind::OpenAi);
     }
 }
