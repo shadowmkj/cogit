@@ -3,7 +3,7 @@
 // ==============================================================================
 //
 // Main Application Coordinator: Drives argument parsing, config loading,
-// Git status verification, LLM commit message generation, and interactive workflows.
+// Git status verification, LLM commit message generation, CLI prompt, and TUI modes.
 
 pub mod cli;
 pub mod config;
@@ -16,7 +16,8 @@ use clap::Parser;
 use cli::Args;
 use config::Config;
 use llm::{LlmClient, build_prompt};
-use ui::{UserAction, run_cli_prompt};
+use ui::tui::AppStatus;
+use ui::{UserAction, run_cli_prompt, run_tui};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -92,7 +93,35 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    // 8. Default: Interactive CLI Review Loop
+    // 8. Handle Full TUI Mode (--tui)
+    if args.tui {
+        let tui_status = run_tui(
+            staged_diff,
+            provider_name,
+            provider,
+            initial_message,
+            detailed,
+            editor_pref,
+        )
+        .await
+        .context("run TUI session")?;
+
+        match tui_status {
+            AppStatus::Committed(msg) => {
+                let output =
+                    git::execute_commit(&msg).context("commit changes to Git repository")?;
+                println!("{}", output);
+            }
+            AppStatus::Cancelled => {
+                println!("Commit cancelled.");
+            }
+            _ => {}
+        }
+
+        return Ok(());
+    }
+
+    // 9. Default: Interactive CLI Review Loop
     let mut current_message = initial_message;
     loop {
         let action = run_cli_prompt(current_message.clone(), editor_pref)
