@@ -1,0 +1,11 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+*.pdb
+
+# Project-local temporary files
+tmp/
+
+# AI-generated documentation and agent metadata
+ai_docs/
+.agents/

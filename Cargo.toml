@@ -1,0 +1,20 @@
+[package]
+name = "cogit"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.6", features = ["derive", "env"] }
+crossterm = "0.28.1"
+directories = "6.0.0"
+inquire = "0.9.4"
+ratatui = "0.29.0"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+shlex = "2.0.1"
+tempfile = "3.27.0"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
+toml = "1.1.4"
+tui-textarea = "0.7.0"
