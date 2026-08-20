@@ -297,7 +297,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "crossterm 0.28.1",
+ "crossterm 0.29.0",
  "directories",
  "inquire",
  "ratatui 0.30.2",
