@@ -33,7 +33,7 @@ cogit
 - `cogit --tui`: Open full-screen dual-pane Terminal UI.
 - `cogit --dry-run`: Print commit message to stdout without committing.
 - `cogit -p, --provider <NAME>`: Override active provider (`gemini`, `openai`, `ollama`).
-- `cogit -m, --model <MODEL>`: Override model name (e.g. `gemini-2.5-flash`, `gpt-4o-mini`).
+- `cogit -m, --model <MODEL>`: Override model name (e.g. `gemini-3.5-flash-lite`, `gpt-4o-mini`).
 - `cogit --prompt <HINT>`: Pass extra context or instructions.
 - `cogit --init-config`: Generate default `~/.config/cogit/config.toml`.
 
@@ -51,7 +51,7 @@ Location: `~/.config/cogit/config.toml`
 default_provider = "gemini"
 
 [providers.gemini]
-model = "gemini-2.5-flash"
+model = "gemini-3.5-flash-lite"
 api_key = "${GEMINI_API_KEY}"
 
 [providers.openai]

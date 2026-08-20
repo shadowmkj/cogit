@@ -106,12 +106,15 @@ fn default_max_diff_chars() -> usize {
 fn default_providers_map() -> HashMap<String, ProviderConfig> {
     let mut map = HashMap::new();
 
+    let gemini_model =
+        std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-3.5-flash-lite".to_string());
+
     map.insert(
         "gemini".to_string(),
         ProviderConfig {
             kind: Some(ProviderKind::Gemini),
             base_url: None,
-            model: "gemini-2.5-flash".to_string(),
+            model: gemini_model,
             api_key: Some("${GEMINI_API_KEY}".to_string()),
         },
     );
@@ -208,7 +211,7 @@ default_provider = "gemini" # or "openai", "ollama", "custom"
 
 [providers.gemini]
 kind = "gemini"
-model = "gemini-2.5-flash"
+model = "gemini-3.5-flash-lite"
 api_key = "${GEMINI_API_KEY}"
 
 [providers.openai]
