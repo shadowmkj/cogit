@@ -117,7 +117,7 @@ pub fn get_staged_diff(max_chars: usize) -> Result<StagedDiff> {
 ///
 /// Stripping lockfile diffs prevents token exhaustion and avoids distracting the LLM
 /// with package hash updates, while still appending a note listing which files were omitted.
-fn filter_noisy_files(raw_diff: &str) -> (String, Vec<String>) {
+pub(crate) fn filter_noisy_files(raw_diff: &str) -> (String, Vec<String>) {
     let mut clean_sections = Vec::new();
     let mut omitted_files = Vec::new();
 
@@ -186,7 +186,7 @@ fn extract_filename_from_diff_header(header: &str) -> Option<String> {
 ///
 /// Truncating at a newline boundary avoids breaking multi-byte UTF-8 sequences and preserves
 /// unified diff line structure.
-fn truncate_diff(diff: &str, max_chars: usize) -> (String, bool) {
+pub(crate) fn truncate_diff(diff: &str, max_chars: usize) -> (String, bool) {
     if diff.len() <= max_chars {
         return (diff.to_string(), false);
     }
