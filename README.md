@@ -62,12 +62,42 @@ cogit
 | Option | Description |
 | :--- | :--- |
 | `-d, --detailed` | Generate structured commit with bulleted details |
+| `-e, --edit` | Open message in `$EDITOR` before committing |
 | `--tui` | Launch full-screen interactive dual-pane TUI |
 | `--dry-run` | Print generated commit message to stdout without committing |
 | `-p, --provider <NAME>` | Select active provider (`gemini`, `openai`, `grok`, `groq`, `ollama`) |
 | `-m, --model <MODEL>` | Override LLM model name |
 | `--prompt <HINT>` | Supply additional guidance or context for message generation |
 | `--init-config` | Initialize default `~/.config/cogit/config.toml` |
+
+#### Workflow Automation Subcommands
+
+##### 1. Git Hook Integration (`cogit hook`)
+Install `prepare-commit-msg` to automatically populate commit message drafts when using standard `git commit`:
+
+```bash
+cogit hook install     # Install hook in current git repository
+cogit hook uninstall   # Remove hook from current git repository
+```
+
+##### 2. Pull Request Description Generator (`cogit pr`)
+Generate structured Markdown PR titles, summaries, and testing checklists by comparing your branch against the base branch:
+
+```bash
+cogit pr               # Generate PR description against base branch (main/master)
+cogit pr --base dev    # Compare against a custom base branch
+cogit pr --copy        # Copy generated PR description to system clipboard
+cogit pr --create      # Directly create PR on GitHub via `gh pr create`
+```
+
+##### 3. Conventional Branch Name Generator (`cogit branch`)
+Generate clean, kebab-case conventional branch names based on your working diff or task description:
+
+```bash
+cogit branch                              # Suggest branch names from working tree changes
+cogit branch "implement oauth2 flow"      # Suggest branch names from task description
+cogit branch "fix token leak" -c          # Interactively pick and checkout the branch
+```
 
 ---
 
