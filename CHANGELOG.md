@@ -1,16 +1,29 @@
-## [unreleased](https://github.com/shadowmkj/cogit)
+## [v0.1.1](https://github.com/shadowmkj/cogit/releases/tag/v0.1.1) - 2026-08-31
 
 ### 🚀 Features
 
-- *(cli)* Add --edit flag for direct external editor workflow - ([2cd9fc0](https://github.com/shadowmkj/cogit/commit/2cd9fc0f024c0f0f00b91d88570a99e55876b85d))
+- *(cli)* Add -e/--edit flag for direct external editor workflow ([#10](https://github.com/shadowmkj/cogit/pull/10)) - ([880a574](https://github.com/shadowmkj/cogit/commit/880a5746041427c2f5b02fe5795da6d3760f597c))
+- *(cli)* Add Cli parser with hook, pr, and branch subcommands - ([6dcf3ff](https://github.com/shadowmkj/cogit/commit/6dcf3ff42ec45aef4779b568c520cab91d7dc3d6))
+- *(git)* Add hooks manager and branch context bridge - ([3a20c16](https://github.com/shadowmkj/cogit/commit/3a20c16c5859ea01da8696da1a8a3625b746d63c))
+- *(llm)* Add prompt builders for PR descriptions and branch names - ([6cabe1c](https://github.com/shadowmkj/cogit/commit/6cabe1cf6ab4dacb590f599e728a520d87ebc567))
+- *(ui)* Add clipboard copy, GitHub CLI launcher, and branch picker - ([107426b](https://github.com/shadowmkj/cogit/commit/107426bc154ebfda0de249cf4da6e6536dc05d24))
+- *(workflows)* Modularize workflow coordinators and main entry point - ([37668bf](https://github.com/shadowmkj/cogit/commit/37668bf4d48ad131eb0e8baee5c2ee8e938ae57d))
 
 ### 🐛 Bug Fixes
 
 - *(ci)* Format tag ref with refs/tags/ prefix in upload-rust-binary-action - ([203aa3d](https://github.com/shadowmkj/cogit/commit/203aa3d7ec93020eb3a5322e737044c09ca5b255))
 
+### 👷 CI
+
+- *(actions)* Bump actions/checkout from 4 to 7 ([#13](https://github.com/shadowmkj/cogit/pull/13)) - ([7963ab9](https://github.com/shadowmkj/cogit/commit/7963ab9af71343121c19f438f9d200174eeb8257))
+- *(actions)* Bump softprops/action-gh-release from 2 to 3 ([#14](https://github.com/shadowmkj/cogit/pull/14)) - ([867593f](https://github.com/shadowmkj/cogit/commit/867593fa97ddba5c3fa63d81a6b8e808502d9954))
+- *(actions)* Bump codecov/codecov-action from 5 to 7 ([#12](https://github.com/shadowmkj/cogit/pull/12)) - ([e75f164](https://github.com/shadowmkj/cogit/commit/e75f164c5d6c34635b831067fc8045db45864d9f))
+
 ### ⚙️ Misc
 
 - Update copyright holder in LICENSE - ([bdc8b1e](https://github.com/shadowmkj/cogit/commit/bdc8b1ea3991d45997abbdaabf02ed791dc53f11))
+- Update documentation and add workflow automation specification - ([c8ecb77](https://github.com/shadowmkj/cogit/commit/c8ecb770a7ed4368cc548d2a9afe3a52857ee06f))
+- Remove implementation plan and todo task lists - ([019fffa](https://github.com/shadowmkj/cogit/commit/019fffa8a503e4b6381858b4c39f9f2bb3d5983e))
 ## [v0.1.0](https://github.com/shadowmkj/cogit/releases/tag/v0.1.0) - 2026-08-20
 
 ### 🚀 Features

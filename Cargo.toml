@@ -1,6 +1,6 @@
 [package]
 name = "cogit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT"
 description = "Fast, AI-powered conventional commit assistant for Git with interactive CLI and TUI modes"
