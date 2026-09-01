@@ -12,6 +12,22 @@ Fast, lightweight CLI and TUI tool written in Rust that inspects staged Git diff
 
 ---
 
+## 📑 Table of Contents
+
+- [Features](#-features)
+- [Quick Start](#-quick-start)
+- [Installation](#-installation)
+- [Usage & Options](#-usage--options)
+- [Workflow Automation](#-workflow-automation)
+  - [Git Hook Integration (`cogit hook`)](#1-git-hook-integration-cogit-hook)
+  - [Pull Request Generator (`cogit pr`)](#2-pull-request-description-generator-cogit-pr)
+  - [Branch Name Generator (`cogit branch`)](#3-conventional-branch-name-generator-cogit-branch)
+- [Supported Providers](#-supported-providers)
+- [Configuration](#-configuration)
+- [License](#-license)
+
+---
+
 ## ✨ Features
 
 - **Conventional Commits**: Produces structured commits (`feat:`, `fix:`, `refactor:`, `chore:`, etc.).
@@ -25,7 +41,24 @@ Fast, lightweight CLI and TUI tool written in Rust that inspects staged Git diff
 
 ## 🚀 Quick Start
 
-### Installation
+Get up and running with Cogit in under a minute:
+
+```bash
+# 1. Install via Homebrew (macOS/Linux) or Cargo
+brew install shadowmkj/tap/cogit
+# or: cargo install cogit
+
+# 2. Export your preferred LLM provider API key
+export GEMINI_API_KEY="your-api-key"
+
+# 3. Stage changes and generate your commit
+git add .
+cogit
+```
+
+---
+
+## 📦 Installation
 
 **Via Shell Script (macOS / Linux):**
 ```bash
@@ -48,7 +81,9 @@ irm https://raw.githubusercontent.com/shadowmkj/cogit/main/scripts/install.ps1 |
 cargo install cogit
 ```
 
-### Usage
+---
+
+## 💡 Usage & Options
 
 Stage your changes and invoke `cogit`:
 
@@ -57,7 +92,7 @@ git add .
 cogit
 ```
 
-#### Common Options
+### Common Options
 
 | Option | Description |
 | :--- | :--- |
@@ -70,9 +105,11 @@ cogit
 | `--prompt <HINT>` | Supply additional guidance or context for message generation |
 | `--init-config` | Initialize default `~/.config/cogit/config.toml` |
 
-#### Workflow Automation Subcommands
+---
 
-##### 1. Git Hook Integration (`cogit hook`)
+## ⚡ Workflow Automation
+
+### 1. Git Hook Integration (`cogit hook`)
 Install `prepare-commit-msg` to automatically populate commit message drafts when using standard `git commit`:
 
 ```bash
@@ -80,7 +117,7 @@ cogit hook install     # Install hook in current git repository
 cogit hook uninstall   # Remove hook from current git repository
 ```
 
-##### 2. Pull Request Description Generator (`cogit pr`)
+### 2. Pull Request Description Generator (`cogit pr`)
 Generate structured Markdown PR titles, summaries, and testing checklists by comparing your branch against the base branch:
 
 ```bash
@@ -90,7 +127,7 @@ cogit pr --copy        # Copy generated PR description to system clipboard
 cogit pr --create      # Directly create PR on GitHub via `gh pr create`
 ```
 
-##### 3. Conventional Branch Name Generator (`cogit branch`)
+### 3. Conventional Branch Name Generator (`cogit branch`)
 Generate clean, kebab-case conventional branch names based on your working diff or task description:
 
 ```bash
@@ -98,6 +135,7 @@ cogit branch                              # Suggest branch names from working tr
 cogit branch "implement oauth2 flow"      # Suggest branch names from task description
 cogit branch "fix token leak" -c          # Interactively pick and checkout the branch
 ```
+
 
 ---
 
