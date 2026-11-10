@@ -191,8 +191,13 @@ pub(crate) fn truncate_diff(diff: &str, max_chars: usize) -> (String, bool) {
         return (diff.to_string(), false);
     }
 
-    let truncated_slice = &diff[..max_chars];
-    let end_index = truncated_slice.rfind('\n').unwrap_or(max_chars);
+    let mut safe_bound = max_chars.min(diff.len());
+    while safe_bound > 0 && !diff.is_char_boundary(safe_bound) {
+        safe_bound -= 1;
+    }
+
+    let truncated_slice = &diff[..safe_bound];
+    let end_index = truncated_slice.rfind('\n').unwrap_or(safe_bound);
 
     let mut truncated = diff[..end_index].to_string();
     truncated.push_str("\n\n[Diff truncated: staged changes exceeded maximum character limit]");
@@ -244,5 +249,32 @@ index 789..abc 100644
         assert!(is_truncated);
         assert!(truncated.contains("line 1\nline 2"));
         assert!(truncated.contains("[Diff truncated:"));
+    }
+
+    #[test]
+    fn test_truncate_diff_does_not_split_utf8_character() {
+        let diff = "prefix\n🦀 after\n";
+        let max_chars = "prefix\n🦀".len() - 1;
+
+        let (truncated, is_truncated) = truncate_diff(diff, max_chars);
+
+        assert!(is_truncated);
+        assert_eq!(
+            truncated,
+            "prefix\n\n[Diff truncated: staged changes exceeded maximum character limit]"
+        );
+    }
+
+    #[test]
+    fn test_truncate_diff_without_newline_uses_safe_boundary() {
+        let diff = "🦀single-line diff";
+
+        let (truncated, is_truncated) = truncate_diff(diff, 1);
+
+        assert!(is_truncated);
+        assert_eq!(
+            truncated,
+            "\n\n[Diff truncated: staged changes exceeded maximum character limit]"
+        );
     }
 }
