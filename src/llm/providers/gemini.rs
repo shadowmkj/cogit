@@ -83,6 +83,8 @@ struct GeminiResponseContent {
 #[derive(Debug, Deserialize)]
 struct GeminiResponsePart {
     text: Option<String>,
+    #[serde(default)]
+    thought: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -171,8 +173,13 @@ impl LlmProvider for GeminiProvider {
                 .and_then(|c| c.into_iter().next())
                 .and_then(|c| c.content)
                 .and_then(|c| c.parts)
-                .and_then(|p| p.into_iter().next())
-                .and_then(|p| p.text)
+                .map(|parts| {
+                    parts
+                        .into_iter()
+                        .filter(|part| !part.thought)
+                        .filter_map(|part| part.text)
+                        .collect::<String>()
+                })
                 .unwrap_or_default();
 
             if raw_text.trim().is_empty() {
@@ -187,6 +194,51 @@ impl LlmProvider for GeminiProvider {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    async fn mock_response(body: &'static str) -> Result<String> {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0; 8192];
+            let _ = stream.read(&mut request).unwrap();
+            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
+        });
+        let provider = GeminiProvider::new(
+            "test",
+            Some(format!("http://{address}")),
+            "model".into(),
+            Some("key".into()),
+        );
+        let client = reqwest::Client::builder().no_proxy().build().unwrap();
+        let result = provider.generate_commit(&client, "system", "user").await;
+        server.join().unwrap();
+        result
+    }
+
+    #[tokio::test]
+    async fn preserves_all_visible_parts() {
+        let body = r#"{"candidates":[{"content":{"parts":[{"text":"private reasoning","thought":true},{"text":"fix: preserve "},{"inlineData":{}},{"text":"all parts"}]}},{"content":{"parts":[{"text":"other candidate"}]}}]}"#;
+        assert_eq!(
+            mock_response(body).await.unwrap(),
+            "fix: preserve all parts"
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_response_without_visible_text() {
+        let body = r#"{"candidates":[{"content":{"parts":[{"text":"private reasoning","thought":true},{"inlineData":{}}]}}]}"#;
+        assert!(
+            mock_response(body)
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("empty commit message")
+        );
+    }
 
     #[test]
     fn test_parse_gemini_mock_response() {
