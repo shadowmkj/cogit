@@ -1,13 +1,13 @@
 [package]
 name = "cogit"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
-license = "MIT"
 description = "Fast, AI-powered conventional commit assistant for Git with interactive CLI and TUI modes"
-repository = "https://github.com/shadowmkj/cogit"
-homepage = "https://github.com/shadowmkj/cogit"
 readme = "README.md"
-keywords = ["git", "conventional-commits", "cli", "tui", "ai"]
+homepage = "https://github.com/shadowmkj/cogit"
+repository = "https://github.com/shadowmkj/cogit"
+license = "MIT"
+keywords = ["ai", "cli", "conventional-commits", "git", "tui"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
@@ -23,5 +23,5 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 shlex = "2.0.1"
 tempfile = "3.27.0"
-tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
 toml = "1.1.4"

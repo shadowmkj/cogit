@@ -1,3 +1,18 @@
+## [v0.1.2](https://github.com/shadowmkj/cogit/releases/tag/v0.1.2) - 2026-11-10
+
+### 🐛 Bug Fixes
+
+- Preserve Gemini response text parts ([#40](https://github.com/shadowmkj/cogit/pull/40)) - ([46c9ce8](https://github.com/shadowmkj/cogit/commit/46c9ce8d81d71419c169524f3da6410dce8689a6))
+- Truncate diffs at UTF-8 boundaries ([#43](https://github.com/shadowmkj/cogit/pull/43)) - ([ae0a6cb](https://github.com/shadowmkj/cogit/commit/ae0a6cb9372e91579e7c68f6444df4591b690032))
+
+### ⚙️ Misc
+
+- Add table of contents and improve readme documentation - ([c73e2f0](https://github.com/shadowmkj/cogit/commit/c73e2f0b20e36ea539cc028671e374815279a06f))
+
+### 👥 New Contributors
+
+- `@mikemikimike` made their first contribution in [#40](https://github.com/shadowmkj/cogit/pull/40)
+
 ## [v0.1.1](https://github.com/shadowmkj/cogit/releases/tag/v0.1.1) - 2026-08-31
 
 ### 🚀 Features
