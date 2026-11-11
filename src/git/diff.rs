@@ -121,20 +121,12 @@ pub(crate) fn filter_noisy_files(raw_diff: &str) -> (String, Vec<String>) {
     let mut clean_sections = Vec::new();
     let mut omitted_files = Vec::new();
 
-    let sections: Vec<&str> = raw_diff.split("diff --git ").collect();
-
-    for (index, section) in sections.into_iter().enumerate() {
+    for section in split_diff_sections(raw_diff) {
         if section.trim().is_empty() {
             continue;
         }
 
-        let section_text = if index == 0 && !raw_diff.starts_with("diff --git ") {
-            section.to_string()
-        } else {
-            format!("diff --git {}", section)
-        };
-
-        let first_line = section_text.lines().next().unwrap_or_default();
+        let first_line = section.lines().next().unwrap_or_default();
         let filename = extract_filename_from_diff_header(first_line);
 
         let is_noisy_lockfile = filename.as_ref().is_some_and(|f| {
@@ -144,8 +136,7 @@ pub(crate) fn filter_noisy_files(raw_diff: &str) -> (String, Vec<String>) {
                 .is_some_and(|name| NOISY_LOCKFILES.contains(&name))
         });
 
-        let is_binary =
-            section_text.contains("Binary files ") || section_text.contains("GIT binary patch");
+        let is_binary = section.contains("Binary files ") || section.contains("GIT binary patch");
 
         if is_noisy_lockfile {
             if let Some(name) = filename {
@@ -156,7 +147,7 @@ pub(crate) fn filter_noisy_files(raw_diff: &str) -> (String, Vec<String>) {
                 omitted_files.push(format!("{} (binary file omitted)", name));
             }
         } else {
-            clean_sections.push(section_text);
+            clean_sections.push(section.to_string());
         }
     }
 
@@ -171,14 +162,93 @@ pub(crate) fn filter_noisy_files(raw_diff: &str) -> (String, Vec<String>) {
     (result, omitted_files)
 }
 
+fn split_diff_sections(raw_diff: &str) -> Vec<&str> {
+    let mut sections = Vec::new();
+    let mut section_start = 0;
+    let mut line_start = 0;
+
+    for line in raw_diff.split_inclusive('\n') {
+        if line.starts_with("diff --git ") && line_start > section_start {
+            sections.push(&raw_diff[section_start..line_start]);
+            section_start = line_start;
+        }
+        line_start += line.len();
+    }
+
+    if section_start < raw_diff.len() {
+        sections.push(&raw_diff[section_start..]);
+    }
+
+    sections
+}
+
 /// Extracts the destination filepath from standard unified diff headers `diff --git a/... b/...`.
 fn extract_filename_from_diff_header(header: &str) -> Option<String> {
-    let mut parts = header.split_whitespace();
-    if parts.next()? == "diff" && parts.next()? == "--git" {
-        let _a_path = parts.next()?;
-        let b_path = parts.next()?;
-        return Some(b_path.strip_prefix("b/").unwrap_or(b_path).to_string());
+    let paths = header.strip_prefix("diff --git ")?;
+    let (_, paths) = parse_git_path(paths)?;
+    let (destination, _) = parse_git_path(paths)?;
+    destination.strip_prefix("b/").map(str::to_string)
+}
+
+// Git uses C-style quoted tokens for paths with whitespace and escaped bytes.
+fn parse_git_path(input: &str) -> Option<(String, &str)> {
+    let input = input.trim_start();
+    let bytes = input.as_bytes();
+
+    if bytes.first() != Some(&b'"') {
+        let end = input.find(char::is_whitespace).unwrap_or(input.len());
+        if end == 0 {
+            return None;
+        }
+        return Some((input[..end].to_string(), &input[end..]));
     }
+
+    let mut path = Vec::new();
+    let mut cursor = 1;
+    while cursor < bytes.len() {
+        match bytes[cursor] {
+            b'"' => {
+                let path = String::from_utf8_lossy(&path).into_owned();
+                return Some((path, &input[cursor + 1..]));
+            }
+            b'\\' => {
+                cursor += 1;
+                let escaped = *bytes.get(cursor)?;
+                match escaped {
+                    b'0'..=b'7' => {
+                        let mut value = 0u16;
+                        let mut digits = 0;
+                        while digits < 3
+                            && bytes
+                                .get(cursor)
+                                .is_some_and(|byte| (b'0'..=b'7').contains(byte))
+                        {
+                            value = value * 8 + (bytes[cursor] - b'0') as u16;
+                            cursor += 1;
+                            digits += 1;
+                        }
+                        path.push(u8::try_from(value).ok()?);
+                        continue;
+                    }
+                    b'a' => path.push(b'\x07'),
+                    b'b' => path.push(b'\x08'),
+                    b't' => path.push(b'\t'),
+                    b'n' => path.push(b'\n'),
+                    b'v' => path.push(b'\x0b'),
+                    b'f' => path.push(b'\x0c'),
+                    b'r' => path.push(b'\r'),
+                    b'\\' | b'"' => path.push(escaped),
+                    _ => return None,
+                }
+                cursor += 1;
+            }
+            byte => {
+                path.push(byte);
+                cursor += 1;
+            }
+        }
+    }
+
     None
 }
 
@@ -215,6 +285,89 @@ mod tests {
         assert_eq!(
             extract_filename_from_diff_header(header),
             Some("src/main.rs".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_filename_from_quoted_diff_header_with_escapes() {
+        let header = r#"diff --git "a/build outputs/Cargo.lock" "b/build outputs/Cargo.lock""#;
+        assert_eq!(
+            extract_filename_from_diff_header(header),
+            Some("build outputs/Cargo.lock".to_string())
+        );
+
+        let escaped_header =
+            r#"diff --git "a/docs/space\040and quote\".txt" "b/docs/space\040and quote\".txt""#;
+        assert_eq!(
+            extract_filename_from_diff_header(escaped_header),
+            Some("docs/space and quote\".txt".to_string())
+        );
+
+        let unicode_header = r#"diff --git "a/caf\303\251/Cargo.lock" "b/caf\303\251/Cargo.lock""#;
+        assert_eq!(
+            extract_filename_from_diff_header(unicode_header),
+            Some("café/Cargo.lock".to_string())
+        );
+    }
+
+    #[test]
+    fn test_filter_noisy_files_preserves_diff_header_text_in_file_content() {
+        let sample_diff = concat!(
+            "diff --git a/README.md b/README.md\n",
+            "index 123..456 100644\n",
+            "--- a/README.md\n",
+            "+++ b/README.md\n",
+            "@@ -1 +1,3 @@\n",
+            "+Example: diff --git a/Cargo.lock b/Cargo.lock\n",
+            "+Keep this documentation line.\n",
+            "diff --git a/src/lib.rs b/src/lib.rs\n",
+            "index 789..abc 100644\n",
+            "--- a/src/lib.rs\n",
+            "+++ b/src/lib.rs\n",
+            "@@ -1 +1 @@\n",
+            "+pub fn test() {}\n"
+        );
+
+        let (filtered, omitted) = filter_noisy_files(sample_diff);
+
+        assert!(filtered.contains("+Example: diff --git a/Cargo.lock b/Cargo.lock\n"));
+        assert!(filtered.contains("+Keep this documentation line."));
+        assert!(filtered.contains("+pub fn test() {}"));
+        assert!(omitted.is_empty());
+    }
+
+    #[test]
+    fn test_filter_noisy_files_handles_quoted_paths_with_spaces() {
+        let sample_diff = concat!(
+            "diff --git \"a/build outputs/Cargo.lock\" \"b/build outputs/Cargo.lock\"\n",
+            "index 123..456 100644\n",
+            "--- \"a/build outputs/Cargo.lock\"\n",
+            "+++ \"b/build outputs/Cargo.lock\"\n",
+            "@@ -1 +1 @@\n",
+            "-old = 1\n",
+            "+new = 2\n",
+            "diff --git \"a/assets/site image.png\" \"b/assets/site image.png\"\n",
+            "index 123..456 100644\n",
+            "Binary files \"a/assets/site image.png\" and \"b/assets/site image.png\" differ\n",
+            "diff --git \"a/docs/Release Notes.md\" \"b/docs/Release Notes.md\"\n",
+            "index 789..abc 100644\n",
+            "--- \"a/docs/Release Notes.md\"\n",
+            "+++ \"b/docs/Release Notes.md\"\n",
+            "@@ -1 +1 @@\n",
+            "+Release notes are retained.\n"
+        );
+
+        let (filtered, omitted) = filter_noisy_files(sample_diff);
+
+        assert!(!filtered.contains("old = 1"));
+        assert!(!filtered.contains("Binary files"));
+        assert!(filtered.contains("+Release notes are retained."));
+        assert_eq!(
+            omitted,
+            vec![
+                "build outputs/Cargo.lock (lockfile diff omitted)",
+                "assets/site image.png (binary file omitted)"
+            ]
         );
     }
 
