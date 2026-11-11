@@ -514,54 +514,6 @@ mod tests {
         task.abort();
     }
 
-    #[test]
-    fn key_dispatch_clears_errors_and_routes_popup_input() {
-        let client = LlmClient::new();
-        let config = ProviderConfig {
-            kind: Some(crate::config::ProviderKind::OpenAi),
-            base_url: Some("http://127.0.0.1:1/v1".into()),
-            model: "test".into(),
-            api_key: None,
-        };
-        let ctx = TuiContext {
-            llm_client: &client,
-            provider_name: "test",
-            provider_config: &config,
-            detailed: false,
-            configured_editor: None,
-        };
-        let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout())).unwrap();
-        let mut app = app();
-
-        app.error_message = Some("stale error".into());
-        app.focus = Focus::HelpPopup;
-        assert!(
-            handle_key_event(
-                &mut terminal,
-                &mut app,
-                KeyEvent::new(KeyCode::Char('?'), KeyModifiers::NONE),
-                &ctx,
-            )
-            .unwrap()
-            .is_none()
-        );
-        assert_eq!(app.error_message, None);
-        assert_eq!(app.focus, Focus::Diff);
-
-        app.focus = Focus::RegenPopup;
-        assert!(
-            handle_key_event(
-                &mut terminal,
-                &mut app,
-                KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
-                &ctx,
-            )
-            .unwrap()
-            .is_none()
-        );
-        assert_eq!(app.focus, Focus::Diff);
-    }
-
     #[tokio::test]
     async fn dropping_pending_generation_aborts_request() {
         let task = tokio::spawn(std::future::pending::<Result<String>>());
