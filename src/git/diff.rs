@@ -230,7 +230,7 @@ fn parse_git_path(input: &str) -> Option<(String, &str)> {
                         path.push(u8::try_from(value).ok()?);
                         continue;
                     }
-                    b'a' => path.push(0x07),
+                    b'a' => path.push(b'\x07'),
                     b'b' => path.push(b'\x08'),
                     b't' => path.push(b'\t'),
                     b'n' => path.push(b'\n'),
