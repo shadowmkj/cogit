@@ -400,6 +400,168 @@ mod tests {
         assert_eq!(app.status, AppStatus::Cancelled);
     }
 
+    #[test]
+    fn generating_scrolls_only_the_diff_pane() {
+        let mut app = app();
+        app.diff_lines = (0..5).map(|line| line.to_string()).collect();
+        app.status = AppStatus::Regenerating;
+        app.focus = Focus::Diff;
+
+        handle_generating_key(&mut app, KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
+        assert_eq!(app.diff_scroll, 1);
+        handle_generating_key(
+            &mut app,
+            KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE),
+        );
+        assert_eq!(app.diff_scroll, 4);
+        handle_generating_key(&mut app, KeyEvent::new(KeyCode::Up, KeyModifiers::NONE));
+        assert_eq!(app.diff_scroll, 3);
+        handle_generating_key(&mut app, KeyEvent::new(KeyCode::PageUp, KeyModifiers::NONE));
+        assert_eq!(app.diff_scroll, 0);
+
+        app.focus = Focus::Editor;
+        handle_generating_key(
+            &mut app,
+            KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE),
+        );
+        assert_eq!(app.diff_scroll, 0);
+    }
+
+    #[test]
+    fn generating_backtab_toggles_focus() {
+        let mut app = app();
+        app.status = AppStatus::Regenerating;
+        app.focus = Focus::Diff;
+
+        handle_generating_key(
+            &mut app,
+            KeyEvent::new(KeyCode::BackTab, KeyModifiers::NONE),
+        );
+        assert_eq!(app.focus, Focus::Editor);
+    }
+
+    #[tokio::test]
+    async fn regeneration_popup_handles_input_cancel_and_hints() {
+        let client = LlmClient::new();
+        let config = ProviderConfig {
+            kind: Some(crate::config::ProviderKind::OpenAi),
+            base_url: Some("http://127.0.0.1:1/v1".into()),
+            model: "test".into(),
+            api_key: None,
+        };
+        let ctx = TuiContext {
+            llm_client: &client,
+            provider_name: "test",
+            provider_config: &config,
+            detailed: false,
+            configured_editor: None,
+        };
+        let mut app = app();
+        app.focus = Focus::RegenPopup;
+
+        assert!(
+            handle_regen_popup_key(
+                &mut app,
+                KeyEvent::new(KeyCode::Char(' '), KeyModifiers::NONE),
+                &ctx,
+            )
+            .is_none()
+        );
+        assert!(
+            handle_regen_popup_key(
+                &mut app,
+                KeyEvent::new(KeyCode::Char('h'), KeyModifiers::NONE),
+                &ctx,
+            )
+            .is_none()
+        );
+        assert!(
+            handle_regen_popup_key(
+                &mut app,
+                KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE),
+                &ctx,
+            )
+            .is_none()
+        );
+        assert_eq!(app.regen_input, " ");
+
+        assert!(
+            handle_regen_popup_key(
+                &mut app,
+                KeyEvent::new(KeyCode::Left, KeyModifiers::NONE),
+                &ctx,
+            )
+            .is_none()
+        );
+
+        handle_regen_popup_key(
+            &mut app,
+            KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
+            &ctx,
+        );
+        assert_eq!(app.focus, Focus::Diff);
+
+        app.focus = Focus::RegenPopup;
+        app.regen_input = "use a concise subject".into();
+        let task = handle_regen_popup_key(
+            &mut app,
+            KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE),
+            &ctx,
+        )
+        .expect("enter starts regeneration");
+        assert_eq!(app.status, AppStatus::Regenerating);
+        assert_eq!(app.focus, Focus::Editor);
+        task.abort();
+    }
+
+    #[test]
+    fn key_dispatch_clears_errors_and_routes_popup_input() {
+        let client = LlmClient::new();
+        let config = ProviderConfig {
+            kind: Some(crate::config::ProviderKind::OpenAi),
+            base_url: Some("http://127.0.0.1:1/v1".into()),
+            model: "test".into(),
+            api_key: None,
+        };
+        let ctx = TuiContext {
+            llm_client: &client,
+            provider_name: "test",
+            provider_config: &config,
+            detailed: false,
+            configured_editor: None,
+        };
+        let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout())).unwrap();
+        let mut app = app();
+
+        app.error_message = Some("stale error".into());
+        app.focus = Focus::HelpPopup;
+        assert!(
+            handle_key_event(
+                &mut terminal,
+                &mut app,
+                KeyEvent::new(KeyCode::Char('?'), KeyModifiers::NONE),
+                &ctx,
+            )
+            .unwrap()
+            .is_none()
+        );
+        assert_eq!(app.error_message, None);
+        assert_eq!(app.focus, Focus::Diff);
+
+        app.focus = Focus::RegenPopup;
+        assert!(
+            handle_key_event(
+                &mut terminal,
+                &mut app,
+                KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
+                &ctx,
+            )
+            .unwrap()
+            .is_none()
+        );
+        assert_eq!(app.focus, Focus::Diff);
+    }
+
     #[tokio::test]
     async fn dropping_pending_generation_aborts_request() {
         let task = tokio::spawn(std::future::pending::<Result<String>>());
